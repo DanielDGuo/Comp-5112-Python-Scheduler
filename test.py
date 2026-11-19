@@ -1,8 +1,6 @@
 import random as r
 import math
 
-
-    
 # Set seed
 r.seed(0)
 
@@ -115,8 +113,10 @@ def MLFQ(jobs):
         job.process()
         schedule.append((time, jobs.index(job), selected_queue))
 
+        # If the job is complete, record its completion time
         if job.is_complete():
             completion_times[job] = time + 1
+        # Otherwise, determine its next queue and add it back to the appropriate queue.
         else:
             queue_index = get_MLFQ_job_queue(job)
             while len(queues) <= queue_index:
@@ -154,7 +154,6 @@ def Balanced_MLFQ(jobs):
     completion_times = {}
     job_classes = {job: get_Balanced_MLFQ_job_class(job) for job in jobs}
     time = 0
-
 
     while any(not job.is_complete() for job in jobs):
         # Add new jobs to the fresh queue when they arrive
