@@ -5,16 +5,17 @@ import math
 r.seed(0)
 
 # Constants for job generation
+NUM_JOBS = 100
 MIN_ARRIVAL = 0
-MAX_ARRIVAL = 40
+MAX_ARRIVAL = 400
 MIN_LENGTH = 1
-MAX_LENGTH = 10
+MAX_LENGTH = 100
 
 # Constants for online estimate generation
 MU1 = 2.0 # upper bound of the estimate; mu1 * job length
 MU2 = 2.0 # lower bound of the estimate; job length / mu2
 # Setting MU1 to 1 and MU2 to 1/E will place the estimation between the signal time and the job's length
-E = .2 # the estimate is given after e to 1 - e of the job's length has been processed
+E = .35 # the estimate is given after e to 1 - e of the job's length has been processed
 
 # Job Representation
 class Job:
@@ -202,7 +203,7 @@ def Balanced_MLFQ(jobs):
 def print_test():
     # Create a list of jobs by sorted arrival time
     jobs = []
-    for _ in range(10):
+    for _ in range(NUM_JOBS):
         arrival = r.randint(MIN_ARRIVAL, MAX_ARRIVAL)
         length = r.randint(MIN_LENGTH, MAX_LENGTH)
         jobs.append(Job(arrival, length))
@@ -259,7 +260,7 @@ def print_test():
     print(f"Total flow time: {total_flow_time}")
 
 def full_test():
-    num_runs = 10000
+    num_runs = 1000
     average_srpt_flow_time = 0
     average_mlfq_flow_time = 0
     average_balanced_mlfq_flow_time = 0
@@ -267,10 +268,14 @@ def full_test():
     max_srpt_flow_time = 0
     max_mlfq_flow_time = 0
     max_balanced_mlfq_flow_time = 0
-    for _ in range(num_runs):
+
+    num_times_balanced_mlfq_better = 0
+    for x in range(num_runs):
+        if x % (num_runs // 10) == 0:
+            print(f"Run {x}/{num_runs}")
         # Create a list of jobs by sorted arrival time
         jobs = []
-        for _ in range(10):
+        for _ in range(NUM_JOBS):
             arrival = r.randint(MIN_ARRIVAL, MAX_ARRIVAL)
             length = r.randint(MIN_LENGTH, MAX_LENGTH)
             jobs.append(Job(arrival, length))
@@ -278,18 +283,18 @@ def full_test():
 
 
         # Perform SRPT scheduling
-        schedule, total_flow_time = SRPT(jobs)
-        average_srpt_flow_time += total_flow_time/num_runs
-        max_srpt_flow_time = max(max_srpt_flow_time, total_flow_time)
+        schedule, SRPT_total_flow_time = SRPT(jobs)
+        average_srpt_flow_time += SRPT_total_flow_time/num_runs
+        max_srpt_flow_time = max(max_srpt_flow_time, SRPT_total_flow_time)
 
         # Reset processing for other scheduling algorithms
         for job in jobs:
             job.reset_processing()
 
         # Perform MLFQ scheduling
-        schedule, total_flow_time = MLFQ(jobs)
-        average_mlfq_flow_time += total_flow_time/num_runs
-        max_mlfq_flow_time = max(max_mlfq_flow_time, total_flow_time)
+        schedule, MLFQ_total_flow_time = MLFQ(jobs)
+        average_mlfq_flow_time += MLFQ_total_flow_time/num_runs
+        max_mlfq_flow_time = max(max_mlfq_flow_time, MLFQ_total_flow_time)
 
         # Reset processing for other scheduling algorithms
         for job in jobs:
@@ -302,9 +307,17 @@ def full_test():
         MLFQjobs.sort(key=lambda j: j.arrival)
 
         # Perform Balanced MLFQ scheduling
-        schedule, total_flow_time = Balanced_MLFQ(MLFQjobs)
-        average_balanced_mlfq_flow_time += total_flow_time/num_runs
-        max_balanced_mlfq_flow_time = max(max_balanced_mlfq_flow_time, total_flow_time)
+        schedule, Balanced_MLFQ_total_flow_time = Balanced_MLFQ(MLFQjobs)
+        average_balanced_mlfq_flow_time += Balanced_MLFQ_total_flow_time/num_runs
+        max_balanced_mlfq_flow_time = max(max_balanced_mlfq_flow_time, Balanced_MLFQ_total_flow_time)
+
+        num_times_balanced_mlfq_better += 1 if Balanced_MLFQ_total_flow_time < MLFQ_total_flow_time else 0
+
+    print(f"\nMinimum job length: {MIN_LENGTH}, Maximum job length: {MAX_LENGTH}")
+    print(f"Minimum arrival time: {MIN_ARRIVAL}, Maximum arrival time: {MAX_ARRIVAL}")
+    print(f"Number of jobs: {NUM_JOBS}, Number of runs: {num_runs}")
+
+    print(f"\nmu1: {MU1}, mu2: {MU2}, e: {E}")
 
     print(f"\nAverage flow times:")
     print(f"SRPT: {average_srpt_flow_time}")
@@ -315,6 +328,9 @@ def full_test():
     print(f"SRPT: {max_srpt_flow_time}")
     print(f"MLFQ: {max_mlfq_flow_time}")
     print(f"Balanced MLFQ: {max_balanced_mlfq_flow_time}")
+
+    print(f"\nNumber of times Balanced MLFQ was better: {num_times_balanced_mlfq_better}")
+    
 
 if __name__ == "__main__":
     full_test()
