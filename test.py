@@ -76,41 +76,32 @@ def SRPT(jobs):
 
         time += 1
 
-    # Zero-length jobs have no processing time and finish upon arrival.
-    for job in jobs:
-        if job.length == 0:
-            completion_times[job] = job.arrival
-
     # Calculate total flow time for comparison with other scheduling algorithms
     total_flow_time = sum(completion_times[job] - job.arrival for job in jobs)
     return schedule, total_flow_time
 
 # Multilevel Feedback Queue Implementation
-# Default quantums are set to 2, 4, 8, and 16 for the first four queues, with the last queue being FCFS.
-def MLFQ(jobs, quantums=(2, 4, 8, 16), queue_count=5):
-    if queue_count < 1:
-        raise ValueError("queue_count must be at least 1")
-    if len(quantums) != queue_count - 1:
-        raise ValueError("provide one quantum for each transitionable queue")
+def MLFQ(jobs):
+    # Helper function to calculate a job's queue based on its processing time.
+    def get_MLFQ_job_queue(job):
+        return math.floor(math.log2(job.processing + 2)) - 1
 
-    queues = [[] for _ in range(queue_count)]
-    remaining_quantums = {}
+    queues = [[]]
     completion_times = {}
     schedule = []
     time = 0
 
     while any(not job.is_complete() for job in jobs):
         for job in jobs:
-            #add new jobs to the first queue when they arrive
-            if job.arrival == time:
+            # Add new jobs to the first queue when they arrive
+            if job.arrival == time and not job.is_complete():
                 queues[0].append(job)
-                remaining_quantums[job] = quantums[0]
 
         # Select the first non-empty queue
         selected_queue = None
-        for queue in queues:
-            if len(queue) > 0:
-                selected_queue = queues.index(queue)
+        for index, queue in enumerate(queues):
+            if queue:
+                selected_queue = index
                 break
 
         # If no queue has jobs, idle
@@ -126,26 +117,13 @@ def MLFQ(jobs, quantums=(2, 4, 8, 16), queue_count=5):
 
         if job.is_complete():
             completion_times[job] = time + 1
-        # Move the job back to the last queue if it is the last queue
-        elif selected_queue == queue_count - 1:
-            queues[selected_queue].append(job)
-        # Move the job to the next queue if it has used up its quantum
         else:
-            remaining_quantums[job] -= 1
-            if remaining_quantums[job] == 0:
-                next_queue = selected_queue + 1
-                queues[next_queue].append(job)
-                if next_queue < len(quantums):
-                    remaining_quantums[job] = quantums[next_queue]
-            else:
-                queues[selected_queue].append(job)
+            queue_index = get_MLFQ_job_queue(job)
+            while len(queues) <= queue_index:
+                queues.append([])
+            queues[queue_index].append(job)
 
         time += 1
-
-    # Zero-length jobs finish when they arrive.
-    for job in jobs:
-        if job.length == 0:
-            completion_times[job] = job.arrival
 
     total_flow_time = sum(completion_times[job] - job.arrival for job in jobs)
     return schedule, total_flow_time
