@@ -128,7 +128,7 @@ def MLFQ(jobs):
     total_flow_time = sum(completion_times[job] - job.arrival for job in jobs)
     return schedule, total_flow_time
 
-# Balanced MLF Implementation
+# Balanced MLFQ Implementation
 def Balanced_MLFQ(jobs):
 
     # Helper function to calculate a job's class based on its elapsed time, estimate, and signal_after.
@@ -199,11 +199,10 @@ def Balanced_MLFQ(jobs):
     total_flow_time = sum(completion_times[job] - job.arrival for job in jobs)
     return schedule, total_flow_time
 
-if __name__ == "__main__":
-
+def print_test():
     # Create a list of jobs by sorted arrival time
     jobs = []
-    for x in range(10):
+    for _ in range(10):
         arrival = r.randint(MIN_ARRIVAL, MAX_ARRIVAL)
         length = r.randint(MIN_LENGTH, MAX_LENGTH)
         jobs.append(Job(arrival, length))
@@ -249,12 +248,73 @@ if __name__ == "__main__":
     # Print the list of jobs with estimates
     print("\n".join(f"Job {MLFQjobs.index(job)}: {str(job)}" for job in MLFQjobs))
 
-    # Perform Balanced MLF scheduling
+    # Perform Balanced MLFQ scheduling
     schedule, total_flow_time = Balanced_MLFQ(MLFQjobs)
-    print("\nBalanced MLF schedule:")
+    print("\nBalanced MLFQ schedule:")
     for time, job_index, queue_index in schedule:
         if job_index is None:
             print(f"Time {time}: idle")
         else:
             print(f"Time {time}: job {job_index} (queue {queue_index})")
     print(f"Total flow time: {total_flow_time}")
+
+def full_test():
+    num_runs = 10000
+    average_srpt_flow_time = 0
+    average_mlfq_flow_time = 0
+    average_balanced_mlfq_flow_time = 0
+
+    max_srpt_flow_time = 0
+    max_mlfq_flow_time = 0
+    max_balanced_mlfq_flow_time = 0
+    for _ in range(num_runs):
+        # Create a list of jobs by sorted arrival time
+        jobs = []
+        for _ in range(10):
+            arrival = r.randint(MIN_ARRIVAL, MAX_ARRIVAL)
+            length = r.randint(MIN_LENGTH, MAX_LENGTH)
+            jobs.append(Job(arrival, length))
+        jobs.sort(key=lambda j: j.arrival)
+
+
+        # Perform SRPT scheduling
+        schedule, total_flow_time = SRPT(jobs)
+        average_srpt_flow_time += total_flow_time/num_runs
+        max_srpt_flow_time = max(max_srpt_flow_time, total_flow_time)
+
+        # Reset processing for other scheduling algorithms
+        for job in jobs:
+            job.reset_processing()
+
+        # Perform MLFQ scheduling
+        schedule, total_flow_time = MLFQ(jobs)
+        average_mlfq_flow_time += total_flow_time/num_runs
+        max_mlfq_flow_time = max(max_mlfq_flow_time, total_flow_time)
+
+        # Reset processing for other scheduling algorithms
+        for job in jobs:
+            job.reset_processing()
+
+        # Create a list of jobs by sorted arrival time
+        MLFQjobs = []
+        for job in jobs:
+            MLFQjobs.append(JobWithEstimate(job))
+        MLFQjobs.sort(key=lambda j: j.arrival)
+
+        # Perform Balanced MLFQ scheduling
+        schedule, total_flow_time = Balanced_MLFQ(MLFQjobs)
+        average_balanced_mlfq_flow_time += total_flow_time/num_runs
+        max_balanced_mlfq_flow_time = max(max_balanced_mlfq_flow_time, total_flow_time)
+
+    print(f"\nAverage flow times:")
+    print(f"SRPT: {average_srpt_flow_time}")
+    print(f"MLFQ: {average_mlfq_flow_time}")
+    print(f"Balanced MLFQ: {average_balanced_mlfq_flow_time}")
+
+    print(f"\nMaximum flow times:")
+    print(f"SRPT: {max_srpt_flow_time}")
+    print(f"MLFQ: {max_mlfq_flow_time}")
+    print(f"Balanced MLFQ: {max_balanced_mlfq_flow_time}")
+
+if __name__ == "__main__":
+    full_test()
