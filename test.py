@@ -128,7 +128,7 @@ if __name__ == "__main__":
     # Create a list of jobs by sorted time
     jobs = []
     for x in range(10):
-        jobs.append(Job(r.randint(0, 20), r.randint(1, 10)))
+        jobs.append(Job(r.randint(0, 40), r.randint(1, 10)))
     jobs.sort(key=lambda j: j.arrival)
 
     # Print the list of jobs
@@ -157,3 +157,7 @@ if __name__ == "__main__":
         else:
             print(f"Time {time}: job {job_index} (queue {queue_index})")
     print(f"Total flow time: {total_flow_time}")
+
+    # Reset processing for other scheduling algorithms
+    for job in jobs:
+        job.reset_processing()
